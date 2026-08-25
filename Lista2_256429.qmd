@@ -1,0 +1,195 @@
+---
+title: "Lista2_256429"
+author: "Fabiano Carvalho Vasques Junior"
+format: typst
+editor: visual
+---
+
+# LISTA 2
+
+```{r, echo=FALSE}
+library(DBI)
+library(RSQLite)
+
+con <- dbConnect(SQLite(), "me315.sqlite")
+```
+
+## 1
+
+```{sql connection=con}
+
+SELECT STATE, PNO, PNAME
+FROM PRESERVE
+ORDER BY STATE ASC
+```
+
+## 2
+
+```{sql connection = con}
+
+SELECt STATE, PNO, PNAME
+FROM PRESERVE
+ORDER BY STATE DESC
+```
+
+## 3
+
+```{sql, connection = con}
+SELECT STATE, PNO, PNAME
+FROM PRESERVE
+ORDER BY STATE, PNO DESC
+
+```
+
+## 4
+
+```{sql connection = con}
+SELECT STATE, PNO, PNAME
+FROM PRESERVE
+WHERE STATE = "AZ"
+ORDER BY PNO DESC
+
+```
+
+## 5
+
+```{sql connection = con}
+
+SELECT STATE, ACRES, PNAME
+FROM PRESERVE
+WHERE STATE = "AZ"
+ORDER BY PNAME
+
+```
+
+## 6
+
+```{sql connection = con}
+SELECT *
+FROM PRESERVE
+ORDER BY 4 DESC, 2 ASC
+
+
+```
+
+### PARA PENSAR
+
+Nome da coluna. já que fica mais preciso onde queremos ir, inibindo o código de possíveis erros e um "snowball"
+
+## 7
+
+```{sql connection = con}
+SELECT PNO, PNAME
+FROM PRESERVE
+ORDER BY ACRES DESC
+
+```
+
+## 8
+
+```{sql connection = con}
+SELECT STATE, FEE, PNAME
+FROM PRESERVE
+ORDER BY STATE ASC, FEE DESC, PNAME DESC;
+
+
+```
+
+## 9
+
+```{sql connection = con}
+SELECT PNO, ACRES
+FROM PRESERVE
+ORDER BY PNO ASC
+LIMIT 3
+
+```
+
+# HANDS ON
+
+## 1
+
+```{sql connection = con}
+SELECT *
+FROM PRESERVE
+ORDER BY ACRES ASC
+```
+
+## 2
+
+```{sql connection = con}
+SELECT PNAME, FEE
+FROM PRESERVE
+WHERE STATE = 'MT'
+ORDER BY PNAME DESC
+
+```
+
+## 3
+
+```{sql connection = con}
+select fee, acres
+from PRESERVE
+ORDER BY FEE, ACRES
+```
+
+## 4
+
+```{sql connection = con}
+SELECT PNAME
+FROM PRESERVE
+WHERE STATE = 'AZ'
+ORDER BY PNO ASC
+```
+
+## 5
+
+```{sql connection = con}
+
+SELECT STATE, FEE, PNO
+  FROM PRESERVE
+  WHERE ACRES > 100
+  ORDER BY STATE DESC, FEE DESC, PNO ASC
+```
+
+## 6
+
+```{sql connection = con}
+   SELECT *
+  FROM PRESERVE
+  WHERE STATE >= 'M'
+
+```
+
+## 7
+
+```{sql connection = con}
+ SELECT *
+  FROM PRESERVE
+  WHERE PNAME < 'TATKON'
+```
+
+## 9 
+
+```{sql connection = con}
+SELECT *
+  FROM EMPLOYEE
+  ORDER BY ENAME ASC
+```
+
+## 10
+
+```{sql connection = con}
+SELECT ENAME, SALARY
+  FROM EMPLOYEE
+  WHERE SALARY > 2000
+  ORDER BY SALARY DESC
+```
+
+## 11
+
+```{sql connection = con}
+SELECT DNO, ENO, ENAME
+  FROM EMPLOYEE
+  ORDER BY DNO DESC, ENO ASC
+```
