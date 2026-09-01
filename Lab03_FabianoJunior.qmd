@@ -1,0 +1,92 @@
+---
+title: "Lab03_FabianoJunior"
+format: 
+  pdf: default
+  html: default
+
+---
+
+#1
+
+```{r}
+library(readr)
+library(dplyr)
+
+##1
+getStats <- function(x, pos) {
+  x = x%>%
+    filter(!startsWith(DESTINATION_AIRPORT, "1")) %>%
+    filter(complete.cases(.)) %>%
+  group_by(DESTINATION_AIRPORT) %>%
+    summarise(
+      soma_atrasos = sum(ARRIVAL_DELAY),
+      qtd = n()
+    )
+  x
+}
+flights_col = cols_only(DESTINATION_AIRPORT = 'c', ARRIVAL_DELAY = 'd')
+flights = read_csv_chunked("flights.csv",
+          callback = DataFrameCallback$new(getStats),
+          chunk_size = 1000000,
+          col_types = flights_col)
+airlines = read_csv("airlines.csv")
+airports = read_csv("airports.csv",
+                    col_select = c(IATA_CODE, CITY, STATE, LATITUDE, LONGITUDE))
+
+flights = bind_rows(flights) %>%
+  group_by(DESTINATION_AIRPORT)%>%
+  summarise(
+    soma_atrasos = sum(soma_atrasos),
+    qtd = sum(qtd),
+    media_atraso = soma_atrasos / qtd
+  )
+
+```
+
+#2
+
+```{r}
+##2
+### a coluna chave em flights eh DESTINATION_AIRPORT
+### a coluna chave em CITY e STATE
+### aeroportos que nao tem em airports mas tem em flights
+ausentes <- flights %>%
+  anti_join(
+    airports,
+    by = c("DESTINATION_AIRPORT" = "IATA_CODE")
+  )
+### todos aeroportos estao listados
+
+flights <- left_join(
+  flights,
+  airports,
+  by = c("DESTINATION_AIRPORT" = "IATA_CODE")
+)
+```
+
+#3
+
+```{r}
+airports %>%
+  group_by(STATE) %>%
+  summarise(qtd_aeroportos = n()) %>%
+  arrange(desc(qtd_aeroportos))
+```
+
+#4
+
+```{r, eval = FALSE}
+Sys.setenv(TZ = "America/Sao_Paulo")
+Sys.time()
+library(leaflet)
+this = leaflet(flights) %>%
+  addTiles()%>%
+  addMarkers(
+  lng = ~LONGITUDE,
+  lat = ~LATITUDE,
+  popup = ~paste(
+      "Aeroporto:", DESTINATION_AIRPORT,
+      "<br>Atraso médio:", media_atraso
+  ))
+this
+```
