@@ -76,8 +76,6 @@ airports %>%
 #4
 
 ```{r, eval = FALSE}
-Sys.setenv(TZ = "America/Sao_Paulo")
-Sys.time()
 library(leaflet)
 this = leaflet(flights) %>%
   addTiles()%>%
@@ -90,3 +88,8 @@ this = leaflet(flights) %>%
   ))
 this
 ```
+```{r}
+Sys.setenv(TZ = "America/Sao_Paulo")
+Sys.time()
+```
+
