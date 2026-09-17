@@ -1,0 +1,240 @@
+---
+title: "lab05_256429_FabianoJunior"
+format: typst
+editor: visual
+---
+
+```{r}
+library(tidyverse)
+library(readr)
+library(ggplot2)
+library(leaflet)
+
+
+# Ler o arquivo dos aeroportos
+airports <- read_csv(
+  "airports.csv",
+  col_select = c(
+    IATA_CODE,
+    CITY,
+    STATE,
+    LATITUDE,
+    LONGITUDE
+  ),
+  show_col_types = FALSE
+)
+
+
+# Função para analisar uma aeronave
+analisa_aeronave <- function(tail_number, arquivo) {
+  
+  # Lista para armazenar os resultados de cada parte do arquivo
+  partes <- list()
+  
+  
+  # Função executada para cada parte do flights.csv
+  callback <- DataFrameCallback$new(
+    function(x, pos) {
+      
+      # Selecionar somente os voos da aeronave
+      dados <- x %>%
+        filter(
+          TAIL_NUMBER == tail_number,
+          CANCELLED == 0
+        )
+      
+      # Armazenar os voos encontrados
+      if (nrow(dados) > 0) {
+        partes[[length(partes) + 1]] <<- dados
+      }
+    }
+  )
+  
+  
+  # Ler flights.csv por partes de 1 milhão de linhas
+  read_csv_chunked(
+    arquivo,
+    callback = callback,
+    chunk_size = 1000000,
+    progress = FALSE
+  )
+  
+  
+  # Juntar todas as partes
+  voos <- bind_rows(partes)
+  
+  
+  # Criar data e ordenar os voos
+  voos <- voos %>%
+    mutate(
+      DATA = as.Date(
+        paste(YEAR, MONTH, DAY, sep = "-")
+      ),
+      HORA = as.numeric(SCHEDULED_DEPARTURE)
+    ) %>%
+    arrange(DATA, HORA)
+  
+  
+  # --------------------------------------------------
+  # TABELA
+  # --------------------------------------------------
+  
+  tabela <- voos %>%
+    select(
+      all_of(names(read_csv(
+        arquivo,
+        n_max = 0,
+        show_col_types = FALSE
+      )))
+    )
+  
+  
+  # --------------------------------------------------
+  # DADOS PARA O GRÁFICO
+  # --------------------------------------------------
+  
+  dados_grafico <- voos %>%
+    mutate(
+      velocidade_media = DISTANCE / AIR_TIME * 60
+    ) %>%
+    filter(
+      is.finite(velocidade_media)
+    )
+  
+  
+  # Gráfico da velocidade média dos voos
+  grafico <- ggplot(
+    dados_grafico,
+    aes(
+      x = DATA,
+      y = velocidade_media
+    )
+  ) +
+    geom_point() +
+    labs(
+      title = paste(
+        "Velocidade média dos voos da aeronave",
+        tail_number
+      ),
+      x = "Data",
+      y = "Velocidade média"
+    ) +
+    theme_minimal()
+  
+  
+  # Retornar tabela e gráfico
+  return(
+    list(
+      tabela = tabela,
+      grafico = grafico
+    )
+  )
+}
+
+
+# --------------------------------------------------
+# ANALISAR A AERONAVE
+# --------------------------------------------------
+
+resultado <- analisa_aeronave(
+  "N431WN",
+  "flights.csv"
+)
+
+
+# Mostrar a tabela
+resultado$tabela
+
+
+# Mostrar o gráfico
+resultado$grafico
+
+
+# --------------------------------------------------
+# MAPA
+# --------------------------------------------------
+
+mapa_dados <- resultado$tabela %>%
+  left_join(
+    airports %>%
+      select(
+        IATA_CODE,
+        LATITUDE,
+        LONGITUDE
+      ),
+    by = c(
+      "ORIGIN_AIRPORT" = "IATA_CODE"
+    )
+  ) %>%
+  rename(
+    ORIGIN_LAT = LATITUDE,
+    ORIGIN_LON = LONGITUDE
+  ) %>%
+  left_join(
+    airports %>%
+      select(
+        IATA_CODE,
+        LATITUDE,
+        LONGITUDE
+      ),
+    by = c(
+      "DESTINATION_AIRPORT" = "IATA_CODE"
+    )
+  ) %>%
+  rename(
+    DESTINATION_LAT = LATITUDE,
+    DESTINATION_LON = LONGITUDE
+  )
+
+
+```
+
+```{r, eval = FALSE}
+# Criar o mapa
+mapa <- leaflet() %>%
+  addTiles()
+
+
+# Adicionar os trajetos
+for (i in 1:nrow(mapa_dados)) {
+  
+  # Velocidade média do voo
+  velocidade <- mapa_dados$DISTANCE[i] /
+    mapa_dados$AIR_TIME[i] * 60
+  
+  # Espessura da linha baseada na velocidade
+  espessura <- 1 + min(
+    velocidade / 100,
+    8
+  )
+  
+  mapa <- mapa %>%
+    addPolylines(
+      lng = c(
+        mapa_dados$ORIGIN_LON[i],
+        mapa_dados$DESTINATION_LON[i]
+      ),
+      lat = c(
+        mapa_dados$ORIGIN_LAT[i],
+        mapa_dados$DESTINATION_LAT[i]
+      ),
+      weight = espessura,
+      opacity = 0.7,
+      popup = paste0(
+        "Data: ", mapa_dados$DATA[i],
+        "<br>Voo: ", mapa_dados$FLIGHT_NUMBER[i],
+        "<br>Origem: ", mapa_dados$ORIGIN_AIRPORT[i],
+        "<br>Destino: ", mapa_dados$DESTINATION_AIRPORT[i],
+        "<br>Velocidade média: ",
+        round(velocidade, 2)
+      )
+    )
+}
+
+
+
+mapa
+```
+
+```{}
+```
