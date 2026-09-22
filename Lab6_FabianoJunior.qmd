@@ -1,0 +1,80 @@
+---
+title: "Lab 06"
+author: "Fabiano Carvalho Vasques Junior 256429"
+format: pdf
+editor: visual
+---
+#1
+```{r, warning = FALSE, message = FALSE}
+library(dplyr)
+path = getwd()
+fname = file.path(path, "disco.db")
+
+```
+#2
+```{r}
+library(RSQLite)
+conn = dbConnect(SQLite(),fname)
+```
+#3
+```{r}
+dbListTables(conn)
+```
+
+#4
+```{r}
+dbListFields(conn,"customers")
+```
+#5
+```{r}
+dbGetQuery(conn, "SELECT COUNT(*)
+           FROM customers")
+```
+#6
+```{r}
+dbGetQuery(conn, "SELECT COUNT(DISTINCT Country) AS qtd_paises FROM customers")
+```
+#7
+```{r}
+dbGetQuery(conn, "SELECT Country, COUNT(*) AS qtd
+           FROM customers
+           GROUP BY Country
+           ORDER BY qtd DESC")
+```
+#8
+```{r}
+dbGetQuery(conn, "
+  SELECT Country, COUNT(*) AS qtd
+  FROM customers
+  GROUP BY Country
+  ORDER BY qtd DESC
+  LIMIT 5
+")
+```
+#9
+```{r}
+dbGetQuery(conn, "
+  SELECT DISTINCT Country
+  FROM customers
+  WHERE LENGTH(Country) = 6
+")
+```
+#10
+```{r}
+dbGetQuery(conn, "
+  SELECT DISTINCT tracks.Name
+  FROM customers
+  INNER JOIN invoices
+    ON customers.CustomerId = invoices.CustomerId
+  INNER JOIN invoice_items
+    ON invoices.InvoiceId = invoice_items.InvoiceId
+  INNER JOIN tracks
+    ON invoice_items.TrackId = tracks.TrackId
+  WHERE customers.Country = 'Brazil'
+")
+```
+#11
+```{r}
+dbDisconnect(conn)
+```
+
